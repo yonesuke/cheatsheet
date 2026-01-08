@@ -8,16 +8,14 @@ This repository contains a collection of technical cheatsheets covering topics l
 
 When you create a new `cheatsheet_*.md` file, you **MUST** follow these steps to ensure the repository remains consistent:
 
-### Workflow: Propose Finalization
+### Workflow: Finalization
 
 When a new cheatsheet is created, **DO NOT** immediately update the README or push.
 Instead, wait until the user is satisfied with the cheatsheet content and the conversation has "converged".
 
-**At that point, PROPOSE the following actions to the user:**
+**The user triggers the finalization process by saying "finalize" or something equivalent.**
 
-> "Since the cheatsheet is complete, shall I now update `README.md`, regenerate `cheatsheet_all.md`, and push the changes to the repository?"
-
-**ONLY if the user agrees**, proceed with the following steps:
+**Upon receiving the "finalize" command, proceed with the following steps:**
 
 1.  **Update `README.md`**:
     *   Add the new cheatsheet filename, topic, and a brief summary to the `Overview` table in `README.md`.

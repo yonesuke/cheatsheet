@@ -25,6 +25,7 @@ This repository collects technical cheatsheets covering machine learning, numeri
 | [Optax](cheatsheet_optax.md) | **Optimization / JAX** | Gradient processing and optimization library for JAX. Covers core concepts, common optimizers, schedules, loss functions, and integration with Flax (Linen/NNX) and Muon. |
 | [Option Theory](cheatsheet_option.md) | **Quantitative Finance** | A summary of option pricing theory in financial engineering. Covers stochastic differential equations, Black-Scholes model, various exotic options (Barrier, Asian), and quantitative simulation of delta hedging. |
 | [Polars](cheatsheet_polars.md) | **Data Science** | A complete guide to the high-performance DataFrame library **Polars**. Explains differences from Pandas, query writing with Expressions, optimization via Lazy API, and tips for performance. |
+| [Productivity & Philosophy](cheatsheet_productivity.md) | **Soft Skills / Philosophy** | A guide to engineering philosophy and productivity, covering Deep Work, complexity management, teamwork (HRT), problem solving (McKinsey style), and professional communication. |
 | [Ruff](cheatsheet_ruff.md) | **Code Quality** | A cheat sheet for **Ruff** (modern Python linter/formatter) with **uv**. Covers installation, `pyproject.toml` configuration, VSCode settings, and strict type hint/docstring enforcement. |
 | [uv](cheatsheet_uv.md) | **Python Tooling** | Usage of **uv**, the fast Python package manager. Covers project initialization, dependency management, script execution, tool management, and Python version management. |
 

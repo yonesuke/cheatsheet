@@ -29,6 +29,7 @@ This repository collects technical cheatsheets covering machine learning, numeri
 | [Quant Sins](cheatsheet_quant_sins.md) | **Quantitative Finance** | A summary of the "Seven Sins" of quantitative investing (backtesting biases) and their remedies, based on Deutsche Bank research. |
 | [Research Hacks](cheatsheet_research_hack.md) | **Research & Writing** | Research productivity hacks (tools, workflow), guidelines for writing compelling Abstracts/Introductions, and inspiring quotes for scientists. |
 | [Ruff](cheatsheet_ruff.md) | **Code Quality** | A cheat sheet for **Ruff** (modern Python linter/formatter) with **uv**. Covers installation, `pyproject.toml` configuration, VSCode settings, and strict type hint/docstring enforcement. |
+| [Scikit-learn](cheatsheet_sklearn_classification.md) | **Machine Learning** | A comprehensive 33-part cheatsheet collection covering the entire **scikit-learn** ecosystem, including classification, regression, clustering, ensemble methods, preprocessing, and model selection. |
 | [Technical Writing](cheatsheet_technical_writing.md) | **Communication** | A style guide combining Google's technical writing principles (Active Voice, BLUF) and Japanese technical writing ("理科系の作文技術"). Covers core principles, document structure, and specific rules for clear English and Japanese technical text. |
 | [uv](cheatsheet_uv.md) | **Python Tooling** | Usage of **uv**, the fast Python package manager. Covers project initialization, dependency management, script execution, tool management, and Python version management. |
 

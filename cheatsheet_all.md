@@ -3262,6 +3262,1998 @@ x = 1  # noqa: F841 (Variables assigned but never used)
 ---
 
 
+# Scikit-learn Cheatsheet: Specialized Applications
+
+This cheatsheet covers real-world application examples and specialized techniques demonstrated in the scikit-learn gallery.
+
+## Domain-Specific Applications
+
+### 1. Computer Vision & Face Recognition
+- **Technique**: Eigenfaces (PCA) + Classification (SVM).
+- **Goal**: Identify individuals from images.
+- **Key Function**: `sklearn.decomposition.PCA`, `sklearn.svm.SVC`.
+
+### 2. Finance & Ecology
+- **Stock Market Embedding**: Discovering structure in the stock market using `GraphicalLassoCV` to learn the covariance matrix of price fluctuations.
+- **Species Distribution**: Modeling the geographic distribution of species using `OneClassSVM` or `RandomForest`.
+
+### 3. Text Mining & Topic Modeling
+- **Topics Extraction**: Uncovering latent themes in document collections.
+- **Key Function**: `sklearn.decomposition.NMF`, `sklearn.decomposition.LatentDirichletAllocation`.
+
+## Advanced Engineering Techniques
+
+### 4. Out-of-Core Classification
+- **Scenario**: Dataset too large to fit in memory (Incremental Learning).
+- **Key Function**: `partial_fit()` method available in models like `SGDClassifier`, `MultinomialNB`, and `HashingVectorizer`.
+
+### 5. Time Series Forecasting
+- **Technique**: Lagged features and cyclical engineering (sine/cosine transforms).
+- **Goal**: Convert time-based data into features suitable for regression.
+
+### 6. Outlier & Novelty Detection
+- **Technique**: Identifying "weird" samples in a dataset.
+- **Key Function**: `sklearn.ensemble.IsolationForest`, `sklearn.neighbors.LocalOutlierFactor`, `sklearn.svm.OneClassSVM`.
+
+## Computational Considerations
+- **Prediction Latency**: Using `plot_prediction_latency` to analyze how different models scale with the number of features.
+- **Model Complexity**: Analyzing the trade-off between model complexity (e.g., number of trees) and accuracy.
+
+## Code Snippet: Out-of-Core Learning
+
+```python
+from sklearn.linear_model import SGDClassifier
+from sklearn.feature_extraction.text import HashingVectorizer
+
+# HashingVectorizer is stateless and memory-efficient
+vectorizer = HashingVectorizer(stop_words='english')
+clf = SGDClassifier(loss='log_loss')
+
+# Simulated stream of data
+for X_batch_raw, y_batch in stream_generator():
+    X_batch = vectorizer.transform(X_batch_raw)
+    # partial_fit allows learning from data bit by bit
+    clf.partial_fit(X_batch, y_batch, classes=all_classes)
+```
+
+## Code Snippet: Cyclical Feature Engineering (for Time Series)
+
+```python
+import numpy as np
+import pandas as pd
+
+# Convert hour of day (0-23) into cyclical features
+df['hour_sin'] = np.sin(2 * np.pi * df['hour'] / 24)
+df['hour_cos'] = np.cos(2 * np.pi * df['hour'] / 24)
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Biclustering
+
+Biclustering (also known as co-clustering or two-mode clustering) is a data mining technique which allows simultaneous clustering of the rows and columns of a matrix.
+
+## What can be done?
+- **Simultaneous Clustering**: Find blocks within a data matrix where rows and columns exhibit similar patterns.
+- **Pattern Discovery**: Identify localized sub-structures that global clustering (like K-Means on just rows or just columns) might miss.
+- **Dimensionality Reduction**: Focus on relevant sub-matrices in high-dimensional data.
+
+## Algorithms in scikit-learn
+1. **`SpectralCoclustering`**:
+   - Finds biclusters with values higher than those in corresponding other rows and columns.
+   - Typically used for document-word clustering (identifying topics and their associated documents).
+2. **`SpectralBiclustering`**:
+   - Assumes a checkerboard structure.
+   - Normalizes data to make the checkerboard pattern apparent.
+
+## Theoretical Background
+Biclustering treats the data matrix as a bipartite graph. Applications of **Spectral Graph Theory** (specifically Singular Value Decomposition - SVD) are used to find optimal partitions.
+- **Bipartite Graph**: One set of nodes for rows, another for columns. Edges represent matrix entries.
+- **SVD**: Used to find the "spectrum" of the graph, helping to partition nodes (rows/columns) into clusters.
+
+## Computational Complexity
+- **Overall**: Generally $O(k \cdot min(m, n)^2)$ or higher depending on the implementation, where $k$ is number of clusters.
+- **SVD**: The bottleneck is often the SVD step, which is $O(min(m^2n, mn^2))$ for a dense $m \times n$ matrix, though scikit-learn uses efficient iterative solvers (like Arnoldi or Randomized SVD).
+
+## Application Examples
+- **Bioinformatics**: Clustering genes and experimental conditions (finding genes that are co-expressed under specific conditions).
+- **Text Mining**: Clustering documents and terms (finding specific vocabularies associated with document clusters).
+- **E-commerce**: Clustering users and products (finding groups of users who like specific sets of items).
+
+## Pros & Cons
+### Pros
+- **Local Patterns**: Can find clusters that only exist in a subset of features/samples.
+- **Interpretability**: Provides direct links between row clusters and column clusters.
+### Cons
+- **Complexity**: More computationally expensive than simple clustering.
+- **Heuristic**: Often requires specifying the number of clusters in advance.
+- **Evaluation**: Hard to evaluate without ground truth (lack of standard internal metrics).
+
+## Code Snippet
+
+```python
+import numpy as np
+from sklearn.cluster import SpectralCoclustering
+from sklearn.datasets import make_biclusters
+
+# 1. Generate sample data
+data, rows, columns = make_biclusters(
+    shape=(300, 300), n_clusters=5, noise=5, shuffle=True, random_state=0
+)
+
+# 2. Fit the model
+# n_clusters: The number of biclusters to find.
+model = SpectralCoclustering(n_clusters=5, random_state=0)
+model.fit(data)
+
+# 3. Access results
+# model.row_labels_: Which row cluster each row belongs to
+# model.column_labels_: Which column cluster each column belongs to
+# model.biclusters_: Boolean mask (n_clusters, n_rows, n_cols)
+
+# Rearranging data to visualize biclusters
+fit_data = data[np.argsort(model.row_labels_)]
+fit_data = fit_data[:, np.argsort(model.column_labels_)]
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Probability Calibration
+
+Probability calibration is the process of adjusting the predicted probabilities of a classifier so they better reflect the actual likelihood of an event.
+
+## What can be done?
+- **Confidence Rating**: Transform raw model scores into reliable probability estimates (e.g., if a model says 80% probability, it should be correct 80% of the time).
+- **Model Comparison**: Use Calibration Curves (Reliability Diagrams) to see which models are overconfident or underconfident.
+- **Improved Decision Making**: Essential for risk-sensitive applications like medical diagnosis or financial forecasting.
+
+## Calibration Methods
+1. **Platt Scaling (`method='sigmoid'`)**:
+   - Fits a logistic regression model to the classifier's outputs.
+   - Best for Support Vector Machines (SVM) and when training data is small.
+2. **Isotonic Regression (`method='isotonic'`)**:
+   - Fits a non-parametric, non-decreasing function.
+   - More powerful than Platt scaling but requires more data (~1000+ samples) and is prone to overfitting.
+
+## Theoretical Background
+- **Perfect Calibration**: A model's predicted probability equals the observed frequency of the positive class.
+- **Brier Score**: A common metric to evaluate calibration. It measures the mean squared difference between predicted probability and actual outcome.
+- **Cross-Validation**: Calibration should be performed on data not used for training the base estimator to avoid optimistic biases. `CalibratedClassifierCV` handles this automatically.
+
+## Computational Complexity
+- **Training**: Adds the cost of fitting a 1D regressor (Sigmoid or Isotonic).
+- **Memory**: Minimal, as it only stores parameters for the mapping function.
+- **Latency**: Negligible impact on prediction speed.
+
+## Pros & Cons
+### Pros
+- **Interpretability**: Makes class probabilities meaningful.
+- **Trust**: Allows users to know when the model is "unsure".
+### Cons
+- **Doesn't improve Accuracy**: Calibration adjusts probabilities but generally doesn't change the classification boundary or ROC-AUC.
+- **Data Hungry**: Isotonic regression needs a decent amount of validation data.
+- **Complexity**: Adds another step to the training pipeline.
+
+## Code Snippet
+
+```python
+from sklearn.svm import SVC
+from sklearn.calibration import CalibratedClassifierCV, calibration_curve
+from sklearn.model_selection import train_test_split
+
+X, y = load_your_data()
+X_train, X_test, y_train, y_test = train_test_split(X, y)
+
+# 1. Base Estimator (e.g., SVM which is notoriously uncalibrated)
+base_clf = SVC(kernel='linear', C=1.0)
+
+# 2. Wrap with Calibration
+# method='sigmoid' (Platt) or 'isotonic'
+calibrated_clf = CalibratedClassifierCV(base_clf, method='sigmoid', cv=5)
+calibrated_clf.fit(X_train, y_train)
+
+# 3. Predict Probabilities
+probs = calibrated_clf.predict_proba(X_test)[:, 1]
+
+# 4. Evaluation: Calibration Curve
+prob_true, prob_pred = calibration_curve(y_test, probs, n_bins=10)
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Classification
+
+Classification is a supervised learning task where the goal is to predict the categorical class of new observations.
+
+## What can be done?
+- **Binary & Multiclass Classification**: Predict between two or more discrete categories.
+- **Decision Boundary Analysis**: Understand how models partition the feature space.
+- **Dimensionality Reduction for Class Separation**: Use techniques like LDA to maximize class separability.
+
+## Key Algorithms
+1. **`LinearDiscriminantAnalysis` (LDA)**:
+   - Finds a linear combination of features that separates classes.
+   - Assumes classes follow a Gaussian distribution with shared covariance.
+2. **`QuadraticDiscriminantAnalysis` (QDA)**:
+   - Like LDA but allows each class to have its own covariance matrix.
+   - Results in quadratic decision boundaries.
+3. **Common Others** (Detailed in their own sections):
+   - `LogisticRegression`, `SVC`, `KNeighborsClassifier`, `RandomForestClassifier`, `GradientBoostingClassifier`, `GaussianNB`.
+
+## Theoretical Background
+- **Bayes' Rule**: Many classifiers (LDA, QDA, Naive Bayes) are based on modeling the class conditional density $P(X|y)$.
+- **Discriminative vs Generative**: 
+  - Generative (LDA, QDA, NB): Models $P(X|y)$ and $P(y)$.
+  - Discriminative (Logistic Regression, SVM): Models $P(y|X)$ directly.
+
+## Computational Complexity
+- **LDA**: $O(n \cdot p^2 + p^3)$ where $n=$ samples, $p=$ features.
+- **Prediction**: Usually very fast ($O(p)$ for linear models).
+
+## Evaluation Metrics
+- **Accuracy**: $(TP + TN) / Total$.
+- **Precision/Recall/F1**: For imbalanced classes.
+- **ROC-AUC**: Ability to distinguish between classes across thresholds.
+- **Confusion Matrix**: Detailed look at where types of errors occur.
+
+## Code Snippet: Classifier Comparison
+
+```python
+from sklearn.model_selection import train_test_split
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
+from sklearn.metrics import classification_report
+
+X, y = load_your_dataset()
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
+
+# LDA
+lda = LinearDiscriminantAnalysis()
+lda.fit(X_train, y_train)
+y_pred_lda = lda.predict(X_test)
+
+# QDA
+qda = QuadraticDiscriminantAnalysis()
+qda.fit(X_train, y_train)
+y_pred_qda = qda.predict(X_test)
+
+print("LDA Report:\n", classification_report(y_test, y_pred_lda))
+print("QDA Report:\n", classification_report(y_test, y_pred_qda))
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Clustering
+
+Clustering is an unsupervised learning task that groups a set of objects such that objects in the same group (cluster) are more similar to each other than to those in other groups.
+
+## What can be done?
+- **Data Partitioning**: Group data into $K$ clusters (e.g., K-Means).
+- **Density Discovery**: Find arbitrarily shaped clusters based on density (e.g., DBSCAN).
+- **Hierarchy Building**: Create a tree of clusters (Agglomerative).
+- **Anomalies Identification**: Points that don't fit into any cluster (noise in DBSCAN/OPTICS).
+
+## Key Algorithms
+1. **`KMeans`**:
+   - Simplest and most common. Minimizes within-cluster sum-of-squares.
+   - **MiniBatchKMeans**: Faster version for large datasets.
+2. **`DBSCAN` / `HDBSCAN`**:
+   - Density-based. Can find non-spherical clusters and marked outliers.
+3. **`AgglomerativeClustering`**:
+   - Hierarchical. Can incorporate "connectivity constraints" to group only adjacent points.
+4. **`MeanShift`**:
+   - Centroid-based. Finds peaks in a distribution; chooses number of clusters automatically.
+5. **`AffinityPropagation`**:
+   - Based on message passing between data points.
+
+## Evaluation Metrics (Internal)
+- **Silhouette Coefficient**: Measures how similar a point is to its own cluster compared to others. Higher (near 1) is better.
+- **Calinski-Harabasz Index**: Ratio of between-cluster variance to within-cluster variance.
+- **Davies-Bouldin Index**: Average "similarity" between clusters. Lower is better.
+
+## Computational Complexity
+- **K-Means**: $O(T \cdot K \cdot n \cdot p)$ (T: iterations, K: clusters, n: samples, p: features).
+- **DBSCAN**: $O(n \cdot \log n)$ with spatial index or $O(n^2)$ without.
+- **Agglomerative**: $O(n^2 \cdot \log n)$ to $O(n^3)$.
+
+## Code Snippet: Clustering & Evaluation
+
+```python
+from sklearn.cluster import KMeans, DBSCAN
+from sklearn.metrics import silhouette_score
+from sklearn.preprocessing import StandardScaler
+
+# Scaling is CRITICAL for distance-based clustering
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# 1. K-Means
+kmeans = KMeans(n_clusters=3, n_init='auto', random_state=42)
+labels_kmeans = kmeans.fit_predict(X_scaled)
+print("K-Means Silhouette:", silhouette_score(X_scaled, labels_kmeans))
+
+# 2. DBSCAN
+# eps: maximum distance between two samples for one to be considered as in the neighborhood of the other.
+dbscan = DBSCAN(eps=0.5, min_samples=5)
+labels_dbscan = dbscan.fit_predict(X_scaled)
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Compose (Pipelines & Meta-Estimators)
+
+The `compose` module provides tools to combine multiple estimators into a single one, facilitating complex workflows and preventing data leakage.
+
+## What can be done?
+- **Chaining Steps**: Sequentially apply transformers and a final estimator.
+- **Heterogeneous Data**: Apply different transformations to different columns (e.g., one-hot encoding for categorical, scaling for numerical).
+- **Parallel Processing**: Combine multiple feature extraction methods.
+- **Target Transformation**: Transform the target variable (e.g., log transform) automatically during fit/predict.
+
+## Key Tools
+1. **`Pipeline`**:
+   - Chains multiple steps. Only the last step can be an estimator (model), others must be transformers.
+   - Ensures that transformers are fitted on training data and applied to test data correctly.
+2. **`ColumnTransformer`**:
+   - Routes specific columns to specific transformers.
+   - Essential for handling mixed-type data (numeric + categorical).
+3. **`FeatureUnion`**:
+   - Concatenates the results of multiple transformer objects.
+4. **`TransformedTargetRegressor`**:
+   - Wraps a regressor to apply a transformation to the target $y$ before fitting and an inverse transformation after predicting.
+
+## Best Practices
+- **Prevent Data Leakage**: Always use Pipelines when performing cross-validation to ensure preprocessing parameters (like mean/std) are calculated only on the training folds.
+- **Hyperparameter Tuning**: You can tune hyperparameters of any step in a pipeline using `stepname__parametername` syntax in `GridSearchCV`.
+
+## Code Snippet: Pipeline & ColumnTransformer
+
+```python
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.linear_model import LogisticRegression
+
+# 1. Define transformers for different column types
+numeric_features = ["age", "fare"]
+numeric_transformer = Pipeline(steps=[("scaler", StandardScaler())])
+
+categorical_features = ["embarked", "sex"]
+categorical_transformer = OneHotEncoder(handle_unknown="ignore")
+
+# 2. Bundle them in a ColumnTransformer
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("num", numeric_transformer, numeric_features),
+        ("cat", categorical_transformer, categorical_features),
+    ]
+)
+
+# 3. Create the final Pipeline
+clf = Pipeline(
+    steps=[("preprocessor", preprocessor), ("classifier", LogisticRegression())]
+)
+
+# 4. Use it as a single estimator
+clf.fit(X_train, y_train)
+score = clf.score(X_test, y_test)
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Covariance Estimation
+
+Covariance estimation is used to understand the relationship between variables and is a core component of many algorithms like LDA and Mahalanobis distance.
+
+## What can be done?
+- **Relationship Discovery**: Calculate how variables change together.
+- **Outlier Detection**: Use Mahalanobis distance to find samples that deviate from the distribution.
+- **Structure Learning**: Find sparse relationships where most variables are conditionally independent (graphical models).
+
+## Key Algorithms
+1. **`EmpiricalCovariance`**:
+   - Standard Maximum Likelihood Estimator.
+   - Unbiased but can be inaccurate (high variance) when the number of features is large relative to samples.
+2. **Shrinkage Methods (`LedoitWolf`, `OAS`)**:
+   - Mix empirical covariance with a simple target (like identity matrix).
+   - `LedoitWolf`: Optimally calculates the shrinkage coefficient.
+   - `OAS`: Similar to Ledoit-Wolf but designed for small sample sizes.
+3. **`GraphicalLasso`**:
+   - Learns a sparse inverse covariance matrix (precision matrix) using L1 penalty.
+   - Useful for discovering network structures (which variables depend on which).
+4. **`MinCovDet` (Minimum Covariance Determinant)**:
+   - Robust estimator that ignores outliers.
+   - Highly recommended for outlier detection data cleaning.
+
+## Computational Complexity
+- **Empirical**: $O(p^2 \cdot n)$ ( $n$: samples, $p$: features).
+- **GraphicalLasso**: $O(p^3)$ or higher depending on convergence.
+
+## Code Snippet: Robust vs Empirical Covariance
+
+```python
+import numpy as np
+from sklearn.covariance import EmpiricalCovariance, MinCovDet
+
+# Generate data with outliers
+X = np.random.randn(100, 2)
+X[0] = [10, 10] # Outlier
+
+# 1. Standard Estimation (skewed by outlier)
+emp_cov = EmpiricalCovariance().fit(X)
+print("Empirical Location:", emp_cov.location_)
+
+# 2. Robust Estimation (ignores outlier)
+robust_cov = MinCovDet().fit(X)
+print("Robust Location:", robust_cov.location_)
+
+# 3. Get Mahalanobis Distances to detect outliers
+distances = robust_cov.mahalanobis(X)
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Cross Decomposition
+
+Cross decomposition algorithms find fundamental relations between two matrices (X and Y). They are "latent variable" methods.
+
+## What can be done?
+- **Multi-output Regression**: Predict multiple dependent variables simultaneously.
+- **Dimensionality Reduction**: Project X and Y into a lower-dimensional subspace where they are highly correlated.
+- **PCR vs PLS**: PLS is often superior to Principal Component Regression (PCR) because it considers the relationship between X and Y when finding the directions of maximum variance.
+
+## Key Algorithms
+1. **`PLSRegression` (Partial Least Squares)**:
+   - The most popular method. Finds directions in X that explain variance in X and are correlated with Y.
+   - Great for datasets where the number of predictors exceeds the number of observations (high $p$, low $n$).
+2. **`CCA` (Canonical Correlation Analysis)**:
+   - Finds linear combinations of X and Y that have maximum correlation with each other.
+   - Focuses purely on correlation, not variance.
+3. **`PLSCanonical`**:
+   - A variant of PLS that is more similar to CCA but uses a different objective function.
+
+## Theoretical Background
+- **Latent Variables**: Both X and Y are assumed to be generated by underlying, unobserved factors.
+- **Iterative Deflation**: Algorithms often work by finding the first pair of latent vectors, then subtracting their contribution ("deflating") and finding the next.
+
+## Computational Complexity
+- Generally efficient, dominated by Singular Value Decomposition (SVD) or Eigendecomposition on small covariance matrices. Usually $O(n \cdot p^2)$.
+
+## Code Snippet: PLS Regression
+
+```python
+from sklearn.cross_decomposition import PLSRegression
+import numpy as np
+
+# Multi-target data (X: 100x10, Y: 100x2)
+X = np.random.randn(100, 10)
+Y = np.random.randn(100, 2)
+
+# Fit PLS
+# n_components: Number of latent variables to keep
+pls = PLSRegression(n_components=2)
+pls.fit(X, Y)
+
+# Transform X into latent space
+X_scores, Y_scores = pls.transform(X, Y)
+
+# Predict new values
+Y_pred = pls.predict(X_new)
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Datasets
+
+The `datasets` module provides utilities to load standard datasets, fetch data from external repositories, and generate synthetic data for benchmarking and testing.
+
+## What can be done?
+- **Quick Prototyping**: Use "toy" datasets like Iris or Digits.
+- **Benchmarking**: Fetch large real-world datasets from OpenML.
+- **Algorithm Testing**: Generate synthetic datasets with controlled noise, clusters, or informative features.
+
+## Categories of Datasets
+1. **Toy Datasets**: Loaded immediately with the library.
+   - `load_iris()`, `load_digits()`, `load_wine()`, `load_breast_cancer()`.
+2. **Real-world Datasets**: Downloaded on demand.
+   - `fetch_20newsgroups()`, `fetch_lfw_people()` (faces), `fetch_california_housing()`.
+3. **OpenML**: Access thousands of datasets from openml.org.
+   - `fetch_openml(name='mnist_784')`.
+4. **Synthetic Generators**:
+   - `make_classification()`: For binary/multiclass problems.
+   - `make_regression()`: For regression problems.
+   - `make_blobs()`: For clustering.
+   - `make_moons()`, `make_circles()`: For non-linear separation tests.
+
+## Tips
+- **`as_frame=True`**: Many loaders have this argument to return data as a `pandas.DataFrame` instead of a NumPy array.
+- **`return_X_y=True`**: Returns `(X, y)` directly instead of a `Bunch` object.
+
+## Code Snippet: Generating and Loading Data
+
+```python
+from sklearn.datasets import make_classification, load_iris, fetch_openml
+
+# 1. Load Toy Dataset as DataFrame
+iris = load_iris(as_frame=True)
+df = iris.frame
+
+# 2. Generate Synthetic Classification Data
+X, y = make_classification(
+    n_samples=1000, 
+    n_features=20, 
+    n_informative=15, 
+    n_redundant=5, 
+    random_state=42
+)
+
+# 3. Fetch from OpenML
+# version='active' or specific number
+mnist = fetch_openml('mnist_784', version=1, as_frame=False)
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Decomposition
+
+Matrix decomposition techniques are used for dimensionality reduction, feature extraction, and signal separation.
+
+## What can be done?
+- **Dimensionality Reduction**: Reduce feature space while preserving variance (PCA).
+- **Feature Extraction**: Identify latent patterns (NMF, Factor Analysis).
+- **Blind Source Separation**: Separate mixed signals (ICA).
+- **Denoising**: Reconstruct data by projecting onto principal components.
+
+## Key Algorithms
+1. **`PCA` (Principal Component Analysis)**:
+   - Linearly transforms data to a new coordinate system of orthogonal axes (Principal Components).
+   - **IncrementalPCA**: Processes data in batches (out-of-core).
+   - **KernelPCA**: Uses kernels to find non-linear principal components.
+2. **`NMF` (Non-negative Matrix Factorization)**:
+   - All values in the decomposition are non-negative.
+   - Ideal for part-based representations (e.g., topics in text, parts of faces).
+3. **`FastICA` (Independent Component Analysis)**:
+   - Finds components that are maximally independent (not just uncorrelated).
+   - Famous for the "Cocktail Party Problem" (separating voices).
+4. **`DictionaryLearning`**:
+   - Learns a "dictionary" (basis vectors) such that data can be represented as sparse combinations of these vectors.
+
+## Theoretical Background
+- **SVD**: Singular Value Decomposition is the underlying engine for most PCA variants.
+- **Variance Explained**: A key metric in PCA to decide how many components to keep.
+
+## Computational Complexity
+- **PCA**: $O(min(n^2 p, n p^2))$ for exact solver. Randomized PCA is much faster for high-dimensional data.
+
+## Code Snippet: PCA & NMF
+
+```python
+from sklearn.decomposition import PCA, NMF
+from sklearn.datasets import load_digits
+
+X, _ = load_digits(return_X_y=True)
+
+# 1. Standard PCA
+# n_components can be an int or a float (ratio of variance to keep)
+pca = PCA(n_components=0.95) 
+X_pca = pca.fit_transform(X)
+print(f"Reduced from {X.shape[1]} to {X_pca.shape[1]} features")
+
+# 2. NMF (only works with non-negative data)
+nmf = NMF(n_components=10, init='random', random_state=0)
+X_nmf = nmf.fit_transform(X)
+
+# 3. ICA for signal separation
+from sklearn.decomposition import FastICA
+ica = FastICA(n_components=2)
+S_source = ica.fit_transform(X_signals) # X_signals is mixed
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Developing Estimators
+
+Scikit-learn allows you to create custom estimators that work seamlessly with `Pipeline`, `GridSearchCV`, and other utilities.
+
+## What can be done?
+- **Custom Transformers**: Implement specialized feature engineering.
+- **Custom Models**: Wrap external libraries or unique algorithms into scikit-learn interface.
+- **Enforcement**: Ensure your code follows the "Scikit-Learn API contract".
+
+## Key Components
+1. **Base Classes**:
+   - `BaseEstimator`: Provides `get_params` and `set_params`.
+   - `TransformerMixin`: Provides `fit_transform`.
+   - `ClassifierMixin`: Provides `score` (accuracy) and sets `_estimator_type`.
+   - `RegressorMixin`: Provides `score` (R2).
+2. **Validation Utilities**:
+   - `check_X_y`: Ensures data format and target are consistent.
+   - `check_array`: Standardizes input array (handling NaN, types, etc.).
+   - `check_is_fitted`: Raises an error if the model hasn't been fit yet.
+
+## The Contract
+- **`__init__`**: Must NOT have side effects. Should only assign arguments to attributes. No logic!
+- **`fit(X, y)`**: Must return `self`.
+- **`transform(X)`** or **`predict(X)`**: Perform the actual work after fitting.
+
+## Code Snippet: Custom Transformer
+
+```python
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.utils.validation import check_is_fitted, check_array, check_X_y
+
+class MyLogTransformer(BaseEstimator, TransformerMixin):
+    def __init__(self, add_constant=1.0):
+        # Store parameters (no logic here!)
+        self.add_constant = add_constant
+
+    def fit(self, X, y=None):
+        # Validate data
+        X = check_array(X)
+        self.n_features_in_ = X.shape[1]
+        # Return self
+        return self
+
+    def transform(self, X):
+        # Ensure it was fit
+        check_is_fitted(self)
+        X = check_array(X)
+        # Apply transformation
+        return np.log(X + self.add_constant)
+
+# Validation tests
+from sklearn.utils.estimator_checks import check_estimator
+# check_estimator(MyLogTransformer()) # Runs many automated tests
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Ensemble Methods
+
+Ensemble methods combine the predictions of several base estimators to improve generalizability and robustness over a single estimator.
+
+## What can be done?
+- **Reduce Overfitting**: Averaging techniques (Bagging).
+- **Increase Accuracy**: Iterative techniques (Boosting).
+- **Combine Heterogeneous Models**: Voting and Stacking.
+- **Quantile Regression**: Use Gradient Boosting to predict intervals.
+
+## Key Algorithms
+1. **Bagging (Averaging)**:
+   - `RandomForestClassifier/Regressor`: Builds many deep trees on subsets of data/features and averages results.
+2. **Boosting (Sequential)**:
+   - `GradientBoostingClassifier/Regressor`: Fits new models to the residuals of previous models.
+   - `HistGradientBoosting`: Modern, extremely fast version similar to LightGBM.
+   - `AdaBoost`: Focuses more on samples that previous models misclassified.
+3. **Voting**:
+   - `VotingClassifier`: Combines different models via majority vote (hard) or average probability (soft).
+4. **Stacking**:
+   - `StackingClassifier`: Trains a "final estimator" (meta-learner) to combine predictions of base learners.
+
+## Theoretical Background
+- **Bias-Variance Trade-off**: Bagging reduces variance (good for complex models like deep trees). Boosting reduces bias (good for weak models like shallow trees).
+- **Out-of-Bag (OOB) Score**: Validation method for Random Forest using samples not seen by specific trees.
+
+## Computational Complexity
+- **Random Forest**: Parallelizable. $O(M \cdot n \cdot \log n)$ where $M$ is number of trees.
+- **Gradient Boosting**: Sequential (harder to parallelize, except Hist).
+
+## Code Snippet: Random Forest & HistGradientBoosting
+
+```python
+from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier
+from sklearn.model_selection import cross_val_score
+
+# 1. Random Forest (Great baseline)
+rf = RandomForestClassifier(n_estimators=100, max_depth=None, n_jobs=-1)
+# n_jobs=-1 uses all CPU cores
+
+# 2. HistGradientBoosting (Fast for large datasets)
+# Categorical support is built-in!
+hgb = HistGradientBoostingClassifier(max_iter=100, learning_rate=0.1)
+
+# 3. Voting Ensemble
+from sklearn.ensemble import VotingClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+
+clf1 = LogisticRegression()
+clf2 = RandomForestClassifier()
+clf3 = SVC(probability=True)
+
+eclf = VotingClassifier(
+    estimators=[('lr', clf1), ('rf', clf2), ('svc', clf3)], 
+    voting='soft'
+)
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Feature Selection
+
+Feature selection reduces the number of input variables to reduce overfitting, improve accuracy, and decrease computational cost.
+
+## What can be done?
+- **Filter Methods**: Use statistical scores to pick features.
+- **Wrapper Methods**: Search for the best subset of features using a model.
+- **Embedded Methods**: Let models (like Lasso or Random Forest) select features during training.
+
+## Key Algorithms
+1. **`SelectKBest` (Filter)**:
+   - Selects high-scoring features based on `f_classif` (ANOVA), `chi2`, or `mutual_info_classif`.
+2. **`RFE` (Recursive Feature Elimination - Wrapper)**:
+   - Iteratively fits a model and removes the least important features.
+   - **`RFECV`**: Automatically finds the optimal number of features using cross-validation.
+3. **`SelectFromModel` (Embedded)**:
+   - Uses `feature_importances_` or `coef_` attributes of a fitted estimator.
+   - Works well with `Lasso` (L1 penalty) or `RandomForest`.
+4. **`SequentialFeatureSelector`**:
+   - Greedy forward or backward selection. More robust but slower than RFE.
+
+## Theoretical Background
+- **Mutual Information**: Captures any kind of statistical dependency (nonlinear), whereas F-test/Chi2 only capture linear relationships.
+- **L1 Regularization (Lasso)**: Forces coefficients to be exactly zero, performing automatic selection.
+
+## Computational Complexity
+- **Filter**: Very fast.
+- **RFE**: Slow, as it fits the model multiple times ($O(p)$ times).
+
+## Code Snippet: Feature Selection Pipeline
+
+```python
+from sklearn.pipeline import Pipeline
+from sklearn.feature_selection import SelectKBest, f_classif, RFE
+from sklearn.ensemble import RandomForestClassifier
+
+# 1. Filter: Select top 10 features via ANOVA
+selector = SelectKBest(score_func=f_classif, k=10)
+
+# 2. Wrapper: Recursive Feature Elimination
+# Requires an estimator that provides feature importance (e.g. RF, Linear)
+rfe = RFE(estimator=RandomForestClassifier(), n_features_to_select=5)
+
+# 3. Embedded: Select from Model
+from sklearn.feature_selection import SelectFromModel
+from sklearn.linear_model import Lasso
+sfm = SelectFromModel(Lasso(alpha=0.1))
+
+# Integrating into Pipeline
+pipe = Pipeline([
+    ('feature_selection', selector),
+    ('classification', RandomForestClassifier())
+])
+pipe.fit(X_train, y_train)
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Frozen Estimators
+
+A `FrozenEstimator` is a wrapper that prevents a fitted estimator from being updated during a subsequent `fit` call.
+
+## What can be done?
+- **Transfer Learning**: Use a pre-trained model as a fixed feature extractor in a larger pipeline.
+- **Multi-stage Training**: Fit one part of a model, freeze it, and then fit a second part that depends on the first.
+- **Resource Optimization**: Avoid re-fitting expensive models when only a small part of the pipeline changes.
+
+## Key Concept
+- The `FrozenEstimator` delegates `predict`, `transform`, and other methods to the underlying estimator but its `fit` method does nothing (effectively "no-op").
+
+## Code Snippet: Freezing an Estimator
+
+```python
+from sklearn.frozen import FrozenEstimator
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+
+# 1. Fit an estimator normally
+clf = LogisticRegression().fit(X_train, y_train)
+
+# 2. Freeze it
+frozen_clf = FrozenEstimator(clf)
+
+# 3. Use in a new pipeline
+# When pipe.fit() is called, frozen_clf.fit() does nothing.
+pipe = Pipeline([
+    ('scaler', StandardScaler()),
+    ('clf', frozen_clf)
+])
+pipe.fit(X_new, y_new) 
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Gaussian Processes
+
+Gaussian Processes (GP) are a generic supervised learning method designed to solve regression and probabilistic classification problems.
+
+## What can be done?
+- **Regression with Uncertainty**: Get not just a prediction, but a confidence interval ($ \mu \pm \sigma $).
+- **Interpolation**: GPs can perfectly interpolate training points (if noise is set to zero).
+- **Probabilistic Classification**: Get class probabilities based on the Gaussian process.
+
+## Key Components
+1. **`GaussianProcessRegressor`**:
+   - Standard GP for regression.
+2. **`GaussianProcessClassifier`**:
+   - Uses a Laplace approximation for the non-Gaussian posterior.
+3. **Kernels**:
+   - **`RBF`**: Squared exponential kernel (smoothness).
+   - **`Matern`**: Generalization of RBF (allows control over smoothness).
+   - **`WhiteKernel`**: Models noise.
+   - **`ExpSineSquared`**: Models periodic functions.
+   - **`RationalQuadratic`**: Models mixtures of RBF kernels with different length scales.
+
+## Theoretical Background
+- **Bayesian Inference**: GPs define a prior over functions and update it with data to get a posterior.
+- **Kernel Trick**: The kernel function defines the covariance between any two points in the feature space.
+
+## Computational Complexity
+- **Training**: $O(n^3)$ due to matrix inversion ( $n$: number of samples).
+- **Inference**: $O(n^2)$ for variance, $O(n)$ for mean.
+- **Limitation**: Not suitable for datasets with more than a few thousand samples without approximations.
+
+## Code Snippet: GP Regression with Kernels
+
+```python
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C, WhiteKernel
+
+# 1. Define Kernel
+# C(1.0) * RBF(1.0) + WhiteKernel(noise_level=1)
+kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2)) + WhiteKernel(1e-1)
+
+# 2. Fit model
+# n_restarts_optimizer: Run optimization multiple times to avoid local minima
+gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10)
+gp.fit(X, y)
+
+# 3. Predict with uncertainty
+y_pred, sigma = gp.predict(X_new, return_std=True)
+# y_pred: Mean of posterior, sigma: Standard deviation
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Impute (Handling Missing Data)
+
+The `impute` module provides strategies to handle missing values (NaN) in datasets.
+
+## What can be done?
+- **Univariate Imputation**: Fill missing values using a single feature's statistics.
+- **Multivariate Imputation**: Predict missing values using all other available features (more accurate).
+- **Nearest Neighbor Imputation**: Fill based on similar samples.
+- **Marking Missingness**: Add a binary indicator feature for where data was missing.
+
+## Key Algorithms
+1. **`SimpleImputer`**:
+   - `strategy='mean'`, `'median'`, `'most_frequent'`, or `'constant'`.
+   - Fast and simple baseline.
+2. **`IterativeImputer`**:
+   - Models each feature with missing values as a function of others in a round-robin fashion.
+   - Inspired by R's MICE (Multivariate Imputation by Chained Equations).
+3. **`KNNImputer`**:
+   - Finds $K$ nearest neighbors for each sample with a missing value and averages their values for that feature.
+4. **`MissingIndicator`**:
+   - Useful when the *fact* that a value is missing is informative.
+
+## Tips
+- Always `fit` on training data and `transform` on test data.
+- If using `IterativeImputer`, you must enable it first as it is experimental: `from sklearn.experimental import enable_iterative_imputer`.
+
+## Code Snippet: Advanced Imputation Pipeline
+
+```python
+import numpy as np
+from sklearn.experimental import enable_iterative_imputer
+from sklearn.impute import SimpleImputer, IterativeImputer, KNNImputer
+
+X = [[1, 2], [np.nan, 3], [7, 6], [4, np.nan]]
+
+# 1. Simple Mean Imputation
+imp_mean = SimpleImputer(strategy='mean')
+X_simple = imp_mean.fit_transform(X)
+
+# 2. KNN Imputation (Weights by distance)
+imp_knn = KNNImputer(n_neighbors=2, weights="distance")
+X_knn = imp_knn.fit_transform(X)
+
+# 3. Iterative Imputation
+imp_iter = IterativeImputer(max_iter=10, random_state=0)
+X_iter = imp_iter.fit_transform(X)
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Inspection (Interpretability)
+
+The `inspection` module provides tools to understand how a model makes decisions and which features are most important.
+
+## What can be done?
+- **Feature Importance**: Quantify how much each feature contributes to the prediction.
+- **Partial Dependence**: Visualize the relationship between a target and a feature, averaging out others.
+- **Decision Boundaries**: Plot how a classifier separates classes in a 2D plane.
+
+## Key Tools
+1. **`permutation_importance`**:
+   - Measures importance by randomly shuffling a single feature and seeing how much the score drops.
+   - **Advantage**: Model-agnostic and doesn't overemphasize high-cardinality features (unlike Random Forest's impurity-based importance).
+2. **`PartialDependenceDisplay`**:
+   - Shows the marginal effect one or two features have on the predicted outcome.
+   - Helps identify if the relationship is linear, monotonic, or complex.
+3. **`DecisionBoundaryDisplay`**:
+   - Convenient tool to plot the class decision boundaries in a 2D feature space.
+
+## Comparison: Global vs Local Importance
+- **Impurity-based (RF)**: Fast, but biased toward features with many unique values.
+- **Permutation-based**: Slower, but more reliable and works on any model.
+
+## Code Snippet: Permutation Importance & PDP
+
+```python
+from sklearn.inspection import permutation_importance, PartialDependenceDisplay
+from sklearn.ensemble import RandomForestClassifier
+
+clf = RandomForestClassifier().fit(X_train, y_train)
+
+# 1. Permutation Importance
+# n_repeats: number of times to shuffle each feature
+result = permutation_importance(clf, X_test, y_test, n_repeats=10, random_state=42)
+# result.importances_mean contains the importance scores
+
+# 2. Partial Dependence Plot (PDP)
+# features: index or name of features to plot
+display = PartialDependenceDisplay.from_estimator(clf, X, features=[0, 1, (0, 1)])
+# (0, 1) plots a 2D interaction contour
+```
+
+## Code Snippet: Decision Boundary Display
+
+```python
+from sklearn.inspection import DecisionBoundaryDisplay
+import matplotlib.pyplot as plt
+
+# Only works with 2 features (X has shape [n, 2])
+disp = DecisionBoundaryDisplay.from_estimator(
+    clf, X, response_method="predict", cmap=plt.cm.RdYlBu, alpha=0.8
+)
+plt.scatter(X[:, 0], X[:, 1], c=y, edgecolors="k")
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Kernel Approximation
+
+Kernel approximation allows you to use kernel-based methods (like SVM with RBF kernel) on large datasets by projecting features into a finite-dimensional space where linear models can be used.
+
+## What can be done?
+- **Scaling Kernels**: Use RBF, Polynomial, or Laplacian kernels on datasets too large for standard `SVC`.
+- **Faster Training**: Transform features once and then use fast linear solvers like `SGDClassifier` or `Ridge`.
+- **Precomputed Gram Matrices**: Approximate the kernel matrix when it cannot be stored in memory.
+
+## Key Algorithms
+1. **`RBFSampler`**:
+   - Approximates the RBF kernel using Random Fourier Features.
+   - Map features to a space where the dot product approximates the kernel $K(x, y) = \exp(-\gamma ||x-y||^2)$.
+2. **`Nystroem`**:
+   - Approximates a general kernel by using a subset of the training data (landmarks).
+   - More accurate than `RBFSampler` for many datasets but requires keeping the training samples in memory for the transformation.
+3. **`PolynomialCountSketch`**:
+   - Approximates the polynomial kernel.
+
+## Theoretical Background
+- **Bochner's Theorem**: Any shift-invariant kernel (like RBF) is the Fourier transform of a positive measure. This is the basis for `RBFSampler`.
+- **Low-rank Approximation**: `Nystroem` finds a low-rank approximation of the (potentially infinite) kernel matrix.
+
+## Computational Complexity
+- **Standard SVC**: $O(n^2)$ to $O(n^3)$.
+- **Kernel Approx + Linear Model**: $O(n \cdot d^2)$ where $d$ is the number of components in the approximation.
+
+## Code Snippet: Scaling RBF Kernel
+
+```python
+from sklearn.kernel_approximation import RBFSampler, Nystroem
+from sklearn.linear_model import SGDClassifier
+from sklearn.pipeline import Pipeline
+
+# 1. Random Fourier Features
+rbf_feature = RBFSampler(gamma=1, n_components=100, random_state=1)
+X_features = rbf_feature.fit_transform(X)
+
+# 2. Pipeline for Large Scale Learning
+# This allows using "RBF-like" SVC on millions of rows
+pipe = Pipeline([
+    ('kernel_approx', Nystroem(kernel='rbf', n_components=300)),
+    ('linear_model', SGDClassifier(loss='hinge')) # hing loss + kernel = SVM
+])
+
+pipe.fit(X_train, y_train)
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Linear Models
+
+Linear models assume that the target value is expected to be a linear combination of the input variables.
+
+## What can be done?
+- **Regression**: Predict continuous values (Price, Temperature).
+- **Classification**: Predict categories (Spam/Not Spam).
+- **Regularization**: Avoid overfitting by penalizing large coefficients.
+- **Robust Regression**: Handle outliers in the data.
+
+## Key Algorithms
+1. **Regression**:
+   - `LinearRegression`: Ordinary Least Squares (no penalty).
+   - `Ridge`: L2 penalty (prevents large coefficients, handles multicollinearity).
+   - `Lasso`: L1 penalty (forces coefficients to zero, performs feature selection).
+   - `ElasticNet`: Combination of L1 and L2.
+2. **Classification**:
+   - `LogisticRegression`: Despite name, it's for classification.
+   - `SGDClassifier`: Linear model optimized via Stochastic Gradient Descent (excellent for large data).
+3. **Robust Regression**:
+   - `RANSACRegressor`: Fits model by ignoring outliers.
+   - `HuberRegressor`: Less sensitive to outliers than OLS.
+4. **Bayesian**:
+   - `BayesianRidge`: Ridge with automated hyperparameter estimation.
+
+## Theoretical Background
+- **Loss Functions**: OLS uses Mean Squared Error. Logistic Regression uses Log-Loss.
+- **Regularization**: 
+  - $L_1$: $\alpha \cdot ||w||_1$ (Sparsity)
+  - $L_2$: $0.5 \cdot \alpha \cdot ||w||_2^2$ (Small weights)
+
+## Computational Complexity
+- **OLS**: $O(p^2 n + p^3)$ for $n$ samples, $p$ features.
+- **SGD**: $O(k \cdot n \cdot p)$ ( $k$: iterations). Scale linearly with samples.
+
+## Code Snippet: Lasso and Ridge
+
+```python
+from sklearn.linear_model import Ridge, Lasso, LogisticRegression
+from sklearn.preprocessing import StandardScaler
+
+# 1. Regression with Regularization
+# alpha: Strength of penalty (higher = more regularization)
+ridge = Ridge(alpha=1.0)
+lasso = Lasso(alpha=0.1)
+
+# 2. Classification with L1 (Sparse features)
+# solver='liblinear' or 'saga' required for L1
+log_reg = LogisticRegression(penalty='l1', solver='liblinear', C=1.0)
+
+# 3. Large Scale learning
+from sklearn.linear_model import SGDRegressor
+sgd = SGDRegressor(max_iter=1000, tol=1e-3)
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Manifold Learning
+
+Manifold learning is an approach to non-linear dimensionality reduction. It assumes that data lies along a low-dimensional "manifold" embedded in high-dimensional space.
+
+## What can be done?
+- **Visualization**: Project high-dimensional data (e.g., 64D images or 1000D embeddings) into 2D or 3D.
+- **Non-linear Structure Recovery**: Find structures that PCA (linear) cannot see (e.g., Swiss Roll, S-curve).
+
+## Key Algorithms
+1. **`TSNE` (t-distributed Stochastic Neighbor Embedding)**:
+   - Most popular for visualization. Keeps similar points together and dissimilar points apart.
+   - **Note**: Not for feature engineering (output doesn't preserve global distances or scale).
+2. **`Isomap`**:
+   - Seeks a low-dimensional embedding that maintains "geodesic distances" between all points.
+3. **`LLE` (Locally Linear Embedding)**:
+   - Recovers global structure from locally linear fits.
+4. **`MDS` (Multidimensional Scaling)**:
+   - Aims to preserve the distances between points as much as possible.
+5. **`SpectralEmbedding`**:
+   - Uses Eigendecomposition of the graph Laplacian.
+
+## Best Practices
+- **Scale First**: Always use `StandardScaler` before manifold learning.
+- **PCA Preprocessing**: For high-dimensional data, run PCA first (e.g., to 50D) before T-SNE to reduce noise and speed up computation.
+- **Perplexity (T-SNE)**: Tune this hyperparameter (usually 30-50). It balances local vs global attention.
+
+## Computational Complexity
+- **T-SNE**: $O(n \log n)$ with Barnes-Hut, but can be slow for $n > 50,000$.
+- **Isomap/MDS**: Generally $O(n^2)$ or $O(n^3)$.
+
+## Code Snippet: T-SNE for Visualization
+
+```python
+from sklearn.manifold import TSNE
+from sklearn.datasets import load_digits
+from sklearn.preprocessing import StandardScaler
+
+X, y = load_digits(return_X_y=True)
+X_scaled = StandardScaler().fit_transform(X)
+
+# 1. Apply T-SNE
+tsne = TSNE(n_components=2, perplexity=30, n_iter=1000, random_state=42)
+X_embedded = tsne.fit_transform(X_scaled)
+
+# 2. Plotting (Visualization)
+import matplotlib.pyplot as plt
+plt.scatter(X_embedded[:, 0], X_embedded[:, 1], c=y, cmap='tab10')
+plt.colorbar()
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Miscellaneous Tools
+
+This category contains various utility models and comparisons that don't fit into the main categories.
+
+## Key Techniques
+
+### 1. Isotonic Regression (`IsotonicRegression`)
+- Fits a non-decreasing function to data.
+- Non-parametric: No assumption about the functional form (e.g., linear vs quadratic).
+- Useful for probability calibration and modeling monotonic relationships.
+
+### 2. Anomaly & Outlier Detection Comparison
+- Scikit-learn provides several algorithms, each with different strengths:
+  - **`IsolationForest`**: Fast, based on tree ensembles. Best for high-dimensional data.
+  - **`LocalOutlierFactor` (LOF)**: Based on local density. Good for finding outliers relative to their clusters.
+  - **`OneClassSVM`**: Best for novelty detection when the training data contains only "normal" samples.
+
+### 3. Dimensionality Reduction Bounds
+- **`johnson_lindenstrauss_bound`**: A theoretical tool to estimate the number of dimensions required to preserve distances between points when using random projections.
+
+### 4. Kernel Ridge Regression (`KernelRidge`)
+- Combines Ridge regression (L2) with the kernel trick.
+- Similar to SVR but uses squared error loss and has a closed-form solution.
+
+## Code Snippet: Anomaly Detection
+
+```python
+from sklearn.ensemble import IsolationForest
+from sklearn.neighbors import LocalOutlierFactor
+
+# 1. Isolation Forest (Global anomaly)
+iso = IsolationForest(contamination=0.1, random_state=42)
+y_pred = iso.fit_predict(X) # -1 for anomaly, 1 for normal
+
+# 2. Local Outlier Factor (Local anomaly)
+lof = LocalOutlierFactor(n_neighbors=20, contamination=0.1)
+y_pred = lof.fit_predict(X)
+```
+
+## Code Snippet: Isotonic Regression
+
+```python
+from sklearn.isotonic import IsotonicRegression
+ir = IsotonicRegression(out_of_bounds='clip')
+y_fit = ir.fit_transform(x, y)
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Mixture Models
+
+Mixture models represent data as being generated from a mixture of several component distributions (usually Gaussian).
+
+## What can be done?
+- **Soft Clustering**: Get probabilities of a sample belonging to each cluster.
+- **Density Estimation**: Model complex probability distributions as sums of Gaussians.
+- **Outlier Detection**: Samples in very low-density regions of the mixture are outliers.
+
+## Key Algorithms
+1. **`GaussianMixture` (GMM)**:
+   - Uses the Expectation-Maximization (EM) algorithm to fit a set of Gaussians.
+   - You must specify the number of components $K$.
+2. **`BayesianGaussianMixture`**:
+   - A variant that integrates over parameters using Variational Inference.
+   - Can automatically "zero out" unnecessary components, helping discover the true number of clusters.
+
+## Covariance Types
+GMM allows different constraints on the covariance matrices:
+- `'full'`: Each component has its own general covariance (most flexible).
+- `'tied'`: All components share the same general covariance.
+- `'diag'`: Each component has its own diagonal covariance.
+- `'spherical'`: Each component has its own single variance (simplest).
+
+## Theoretical Background
+- **EM Algorithm**: 
+  - **E-step**: Estimate the probability (responsibility) of each sample for each Gaussian.
+  - **M-step**: Update Gaussian parameters to maximize likelihood based on responsibilities.
+- **BIC/AIC**: Criteria used to select the optimal number of components.
+
+## Computational Complexity
+- $O(k \cdot n \cdot p^2)$ where $n$: samples, $p$: features, $k$: components.
+
+## Code Snippet: GMM Clustering
+
+```python
+from sklearn.mixture import GaussianMixture
+import numpy as np
+
+# 1. Fit GMM
+gmm = GaussianMixture(n_components=3, covariance_type='full', random_state=42)
+gmm.fit(X)
+
+# 2. Predict labels (Hard clustering)
+labels = gmm.predict(X)
+
+# 3. Predict probabilities (Soft clustering)
+probs = gmm.predict_proba(X)
+
+# 4. Find optimal components via BIC
+bic_scores = []
+n_components_range = range(1, 10)
+for n in n_components_range:
+    gmm = GaussianMixture(n_components=n).fit(X)
+    bic_scores.append(gmm.bic(X))
+# Best n is the one where BIC is lowest
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Model Selection & Evaluation
+
+The `model_selection` module provides tools to split data, tune hyperparameters, and evaluate model performance.
+
+## What can be done?
+- **Robust Evaluation**: Use Cross-Validation to ensure the model generalizes.
+- **Hyperparameter Tuning**: Find the best settings for your model (e.g., $C$ in SVM, $k$ in KNN).
+- **Diagnostics**: Analyze underfitting vs. overfitting using learning curves.
+- **Threshold Tuning**: Select the optimal decision threshold for classification.
+
+## Key Tools
+1. **Cross-Validation Splitters**:
+   - `KFold`: Standard split.
+   - `StratifiedKFold`: Preserves class proportions (essential for classification).
+   - `TimeSeriesSplit`: Respects temporal order.
+2. **Hyperparameter Search**:
+   - `GridSearchCV`: Exhaustive search over specified parameter values.
+   - `RandomizedSearchCV`: Samples from distributions (faster, often as good as grid search).
+   - `HalvingGridSearch`: Efficient search using "successive halving" (early stopping for poor params).
+3. **Visualization Displays**:
+   - `LearningCurveDisplay`: Plots score vs. training set size.
+   - `ValidationCurveDisplay`: Plots score vs. single hyperparameter.
+   - `RocCurveDisplay`, `PrecisionRecallDisplay`.
+
+## Best Practices
+- **Nested Cross-Validation**: Use to get an unbiased estimate of the performance when performing hyperparameter tuning.
+- **Scoring**: Specify `scoring='roc_auc'` or `scoring='f1'` to optimize for metrics other than accuracy.
+
+## Code Snippet: Grid Search & Cross-Validation
+
+```python
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
+from sklearn.svm import SVC
+
+# 1. Setup Parameter Grid
+param_grid = {
+    'C': [0.1, 1, 10],
+    'kernel': ['linear', 'rbf'],
+    'gamma': ['scale', 'auto']
+}
+
+# 2. Setup Search
+cv = StratifiedKFold(n_splits=5)
+# refit=True: Fits the best model on the whole training set
+grid = GridSearchCV(SVC(), param_grid, cv=cv, scoring='accuracy', refit=True)
+
+# 3. Execution
+grid.fit(X_train, y_train)
+print("Best Params:", grid.best_params_)
+best_model = grid.best_estimator_
+```
+
+## Code Snippet: Learning Curve
+
+```python
+from sklearn.model_selection import LearningCurveDisplay
+import matplotlib.pyplot as plt
+
+display = LearningCurveDisplay.from_estimator(
+    estimator, X, y, cv=5, scoring='accuracy', train_sizes=np.linspace(0.1, 1.0, 5)
+)
+display.plot()
+plt.show()
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Multiclass
+
+Multiclass classification refers to those classification tasks that have more than two targets.
+
+## What can be done?
+- **Convert Binary to Multiclass**: Use meta-estimators to apply binary classifiers (like SVM) to multiclass problems.
+- **Decision Strategy**: Choose between "One-vs-Rest" or "One-vs-One".
+
+## Key Algorithms
+1. **`OneVsRestClassifier` (OvR)**:
+   - Fits one classifier per class.
+   - Computational burden is $N$ classifiers.
+   - Most common and scalable strategy.
+2. **`OneVsOneClassifier` (OvO)**:
+   - Fits one classifier for every pair of classes.
+   - Computational burden is $N \cdot (N-1) / 2$ classifiers.
+   - Often used for algorithms that don't scale well with the volume of data (like kernels).
+3. **`OutputCodeClassifier`**:
+   - Uses Error-Correcting Output Codes. Each class is represented by a binary code.
+
+## Native Multiclass support
+Some estimators handle multiclass natively (no wrapper needed):
+- `LogisticRegression` (using `'multinomial'` loss).
+- `RandomForestClassifier`.
+- `GaussianNB`.
+- `LinearDiscriminantAnalysis`.
+
+## Code Snippet: Multiclass Strategies
+
+```python
+from sklearn.multiclass import OneVsRestClassifier, OneVsOneClassifier
+from sklearn.svm import SVC
+from sklearn.datasets import load_iris
+
+X, y = load_iris(return_X_y=True)
+
+# 1. One-vs-Rest
+ovr = OneVsRestClassifier(SVC(kernel='linear'))
+ovr.fit(X, y)
+
+# 2. One-vs-One
+ovo = OneVsOneClassifier(SVC(kernel='linear'))
+ovo.fit(X, y)
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Multioutput
+
+Multioutput (also known as multitarget or multiresponse) regression and classification involves predicting multiple target variables for each sample.
+
+## What can be done?
+- **Predict Multiple Values**: Simultaneously predict several continuous variables (regression) or categorical variables (classification).
+- **Model Target Dependencies**: Use chains to let predictions for one target inform the prediction for the next.
+- **Multilabel Classification**: Assign multiple labels to a single sample.
+
+## Key Strategies
+1. **`MultiOutputRegressor` / `MultiOutputClassifier`**:
+   - Independently fits one regressor/classifier per target.
+   - Simple baseline that assumes targets are independent.
+2. **`RegressorChain` / `ClassifierChain`**:
+   - Arranges estimators in a chain.
+   - Target $i$ is predicted using the input features plus the predictions of targets $0, \dots, i-1$.
+   - Captures correlations between targets.
+
+## Data Format
+- Target $y$ should be a 2D array of shape `(n_samples, n_targets)`.
+
+## Code Snippet: Multioutput Regression & Chains
+
+```python
+from sklearn.multioutput import MultiOutputRegressor, RegressorChain
+from sklearn.ensemble import RandomForestRegressor
+import numpy as np
+
+# Multi-target data (X: 100x10, Y: 100x3)
+X = np.random.randn(100, 10)
+Y = np.random.randn(100, 3)
+
+# 1. Independent Multioutput
+mor = MultiOutputRegressor(RandomForestRegressor())
+mor.fit(X, Y)
+
+# 2. Regressor Chain (captures target dependencies)
+chain = RegressorChain(RandomForestRegressor())
+chain.fit(X, Y)
+Y_pred = chain.predict(X_new)
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Nearest Neighbors
+
+Nearest Neighbors algorithms find a predefined number of training samples closest in distance to a new point.
+
+## What can be done?
+- **Supervised Learning**: Classification and Regression based on consensus of neighbors.
+- **Unsupervised Learning**: Find neighbors for manifold learning or data analysis.
+- **Density Estimation**: Estimate the probability distribution of data (KDE).
+- **Anomaly Detection**: Find points that have low local density.
+
+## Key Algorithms
+1. **`KNeighborsClassifier/Regressor`**:
+   - Standard KNN. Majority vote for classification, average for regression.
+2. **`RadiusNeighborsClassifier`**:
+   - Based on points within a fixed distance $r$. Good for data with varied density.
+3. **`NearestNeighbors`**:
+   - Unsupervised learner. Used for retrieving neighbors (`kneighbors()`) or graph building (`kneighbors_graph()`).
+4. **`KernelDensity` (KDE)**:
+   - Represents the data as a sum of kernels. Provides a smooth continuous density estimate.
+5. **`LocalOutlierFactor` (LOF)**:
+   - Compares local density of a point to its neighbors. High LOF score = Outlier.
+6. **`NeighborhoodComponentsAnalysis` (NCA)**:
+   - Learn a linear transformation to improve KNN accuracy.
+
+## Computational Complexity
+- **Brute Force**: $O[D \cdot N^2]$ (Too slow for large data).
+- **KD-Tree / Ball-Tree**: $O[D \cdot N \log N]$ (Faster for low dimensions).
+- **Inference**: Can be expensive for large $N$ since data must be kept.
+
+## Code Snippet: KNN and KDE
+
+```python
+from sklearn.neighbors import KNeighborsClassifier, KernelDensity
+import numpy as np
+
+# 1. KNN Classification
+knn = KNeighborsClassifier(n_neighbors=5, weights='distance', metric='minkowski', p=2)
+knn.fit(X_train, y_train)
+
+# 2. Unsupervised Neighbor Search
+from sklearn.neighbors import NearestNeighbors
+nbrs = NearestNeighbors(n_neighbors=2, algorithm='ball_tree').fit(X)
+distances, indices = nbrs.kneighbors(X)
+
+# 3. Kernel Density Estimation
+# bandwidth: The "width" of the kernels. Crucial parameter to tune!
+kde = KernelDensity(kernel='gaussian', bandwidth=0.5).fit(X)
+log_density = kde.score_samples(X_plot)
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Neural Networks
+
+Scikit-learn provides basic neural network models (Multi-layer Perceptrons) and Restricted Boltzmann Machines.
+
+## What can be done?
+- **Supervised Learning**: Classification and Regression using deep architectures.
+- **Feature Extraction**: Use RBMs to learn high-level features for a subsequent classifier.
+- **Complex Non-linear Modeling**: MLPs can approximate any continuous function.
+
+## Key Algorithms
+1. **`MLPClassifier` / `MLPRegressor`**:
+   - Multi-layer Perceptron (Vanilla Feedforward NN).
+   - **Solvers**: 
+     - `'adam'`: Default. Works well on large datasets.
+     - `'lbfgs'`: Optimizer for small datasets (faster and more stable).
+     - `'sgd'`: Standard stochastic gradient descent.
+2. **`BernoulliRBM`**:
+   - Unsupervised generative model with binary hidden and visible units.
+   - Typically used in a pipeline before a linear classifier.
+
+## Parameters to Tune
+- `hidden_layer_sizes`: e.g., `(100, 50)` for two layers.
+- `activation`: `'relu'` (default), `'logistic'` (sigmoid), `'tanh'`.
+- `alpha`: L2 regularization parameter (to prevent overfitting).
+- `early_stopping`: Set to `True` to stop training when validation score stalls.
+
+## Computational Complexity
+- $O(n \cdot m \cdot k \cdot o \cdot i)$ where $n$: samples, $m$: features, $k$: hidden units, $o$: output units, $i$: iterations.
+- Much slower than linear models.
+
+## Code Snippet: MLP & RBM
+
+```python
+from sklearn.neural_network import MLPClassifier, BernoulliRBM
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LogisticRegression
+
+# 1. Multi-layer Perceptron
+mlp = MLPClassifier(
+    hidden_layer_sizes=(100, 50), 
+    activation='relu', 
+    solver='adam', 
+    alpha=0.0001,
+    max_iter=500,
+    random_state=1
+)
+mlp.fit(X_train, y_train)
+
+# 2. RBM Feature Extraction + Logistic Regression
+rbm = BernoulliRBM(n_components=100, learning_rate=0.01, n_iter=20)
+logistic = LogisticRegression(C=100)
+
+pipe = Pipeline(steps=[('rbm', rbm), ('logistic', logistic)])
+pipe.fit(X_train, y_train)
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Preprocessing
+
+Preprocessing is the transformation of raw data into a format that is more suitable for machine learning algorithms.
+
+## What can be done?
+- **Scaling**: Adjust the range or distribution of numeric features.
+- **Encoding**: Convert categorical strings into numeric values.
+- **Transformation**: Handle skewed data or non-linear relationships.
+- **Discretization**: Bin continuous variables into intervals.
+
+## Key Tools
+1. **Scalers**:
+   - `StandardScaler`: $z = (x - \mu) / \sigma$. Standardizes to mean 0, variance 1.
+   - `MinMaxScaler`: Scales to range [0, 1]. Sensitive to outliers.
+   - `RobustScaler`: Uses median and interquartile range (IQR). Best for outlier-heavy data.
+2. **Encoders**:
+   - `OneHotEncoder`: Binary column per category.
+   - `OrdinalEncoder`: Maps categories to integers [0, 1, 2...].
+   - `TargetEncoder`: Encode categories based on the target mean (useful for high-cardinality).
+3. **Power Transforms**:
+   - `PowerTransformer`: Box-Cox or Yeo-Johnson transforms to make data more Gaussian-like.
+   - `QuantileTransformer`: Maps data to a uniform or normal distribution.
+4. **Generating Features**:
+   - `PolynomialFeatures`: Creates $x^2, xy, y^2$. Captures interactions between features.
+
+## Tips
+- **Fit on Train, Transform on Test**: Never fit a scaler on the whole dataset to avoid data leakage.
+- **Standardization**: Required for distance-based models (KNN, SVM, K-Means) and Gradient Descent.
+
+## Code Snippet: Common Preprocessing
+
+```python
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, PolynomialFeatures
+from sklearn.compose import ColumnTransformer
+
+# 1. Scaling
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+
+# 2. Interaction Terms
+poly = PolynomialFeatures(degree=2, interaction_only=True)
+X_poly = poly.fit_transform(X)
+
+# 3. Target Encoding (for categorical features)
+from sklearn.preprocessing import TargetEncoder
+encoder = TargetEncoder(smooth='auto')
+X_encoded = encoder.fit_transform(X_cat, y)
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Release Highlights (Modern Features)
+
+Scikit-learn evolves rapidly. This cheatsheet highlights key features introduced in recent major versions (0.22 to 1.7+).
+
+## Key Recent Milestones
+
+### 1. Histogram-based GBDT (v0.21+)
+- **`HistGradientBoostingClassifier/Regressor`**: Extremely fast gradient boosting, inspired by LightGBM. Supports native categorical features and missing values.
+
+### 2. Interaction & Constraint Support
+- **Monotonic Constraints**: Force a model (GBDT) to be always increasing or decreasing with respect to a feature.
+- **Interaction Constraints**: Control which features are allowed to interact in tree splits.
+
+### 3. Advanced Encoders & Transformers
+- **`TargetEncoder` (v1.3+)**: Efficiently handles high-cardinality categorical features by using the target variable's mean. It includes smoothing to prevent overfitting.
+- **`SplineTransformer` (v1.0+)**: For non-linear feature engineering, providing a better alternative to polynomial features in many cases.
+
+### 4. Plotting & Displays API
+- Unified API for plotting common charts: `RocCurveDisplay`, `ConfusionMatrixDisplay`, `PrecisionRecallDisplay`, `CalibrationDisplay`, `DecisionBoundaryDisplay`.
+
+### 5. Native Categorical Support
+- `HistGradientBoosting` can now handle categorical data directly without one-hot encoding if `categorical_features` parameter is set.
+
+## Code Snippet: Modern Features
+
+```python
+from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.preprocessing import TargetEncoder
+
+# 1. Native Categorical GBDT
+hgb = HistGradientBoostingClassifier(categorical_features=[0, 3, 5])
+hgb.fit(X, y)
+
+# 2. Easy Confusion Matrix Plotting
+from sklearn.metrics import ConfusionMatrixDisplay
+ConfusionMatrixDisplay.from_estimator(hgb, X_test, y_test)
+
+# 3. Target Encoding
+te = TargetEncoder()
+X_encoded = te.fit_transform(X_train, y_train)
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Semi-Supervised Learning
+
+Semi-supervised learning is used when you have a small amount of labeled data and a large amount of unlabeled data.
+
+## What can be done?
+- **Label Propagation**: Predict labels for the unlabeled portion of your dataset.
+- **Self-Training**: Use a standard supervised model to iteratively label the unlabeled data.
+- **Benefit**: Can significantly improve performance over purely supervised learning when labeling is expensive.
+
+## Key Algorithms
+1. **`SelfTrainingClassifier`**:
+   - A wrapper that can use any classifier that provides `predict_proba`.
+   - In each iteration, it adds the most confident predictions on unlabeled data to the training set.
+2. **`LabelPropagation`**:
+   - Uses a similarity graph between all data points to "spread" labels.
+   - Based on the "Label Propagation" algorithm by Zhu and Ghahramani.
+3. **`LabelSpreading`**:
+   - Similar to LabelPropagation but uses a regularized graph Laplacian. 
+   - Generally more robust to noise.
+
+## Input Format
+- Labels for unlabeled samples must be marked as `-1`.
+
+## Theoretical Background
+- **Manifold Assumption**: Points on the same low-dimensional manifold should have the same label.
+- **Cluster Assumption**: Points in the same cluster are likely to have the same class.
+
+## Code Snippet: Self-Training & Label Spreading
+
+```python
+import numpy as np
+from sklearn.semi_supervised import SelfTrainingClassifier, LabelSpreading
+from sklearn.svm import SVC
+
+# 1. Mark unlabeled data as -1
+y_train_mixed = np.copy(y_train)
+random_unlabeled_indices = np.random.rand(len(y_train)) < 0.7
+y_train_mixed[random_unlabeled_indices] = -1
+
+# 2. Self-Training Wrapper
+# threshold: minimum probability to include a sample in the next iteration
+svc = SVC(probability=True, gamma="auto")
+self_training_model = SelfTrainingClassifier(svc, threshold=0.75)
+self_training_model.fit(X_train, y_train_mixed)
+
+# 3. Label Spreading (Graph-based)
+# kernel: 'knn' or 'rbf'
+label_spread = LabelSpreading(kernel='knn', n_neighbors=7)
+label_spread.fit(X_train, y_train_mixed)
+predicted_labels = label_spread.transduction_
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Support Vector Machines (SVM)
+
+Support Vector Machines are powerful supervised learning models used for classification, regression, and outlier detection.
+
+## What can be done?
+- **High-Dimensional Classification**: Extremely effective in spaces where the number of features is greater than the number of samples.
+- **Non-linear Separation**: Use the "kernel trick" to handle complex decision boundaries.
+- **Robust Regression**: Predict continuous values while only being sensitive to errors within a "tube" (SVR).
+- **Novelty Detection**: Identify if new data comes from the same distribution as training data (OneClassSVM).
+
+## Key Algorithms
+1. **`SVC` / `SVR`**:
+   - The main models for classification and regression.
+   - Use `kernel='rbf'` (default), `'poly'`, or `'linear'`.
+2. **`LinearSVC` / `LinearSVR`**:
+   - Faster than `SVC(kernel='linear')` for large datasets.
+   - Does not support the kernel trick.
+3. **`OneClassSVM`**:
+   - Unsupervised outlier detection.
+
+## Key Hyperparameters
+- **`C`**: Regularization parameter. 
+  - Large `C`: Smaller margin, fits training data better (risk of overfitting).
+  - Small `C`: Larger margin, simplifies the decision boundary (risk of underfitting).
+- **`gamma`**: Defines how far the influence of a single training example reaches.
+  - Large `gamma`: Local influence (complex boundaries).
+  - Small `gamma`: Global influence (simpler boundaries).
+
+## Computational Complexity
+- $O(n_f \cdot n_s^2)$ to $O(n_f \cdot n_s^3)$ for most solvers. Not suitable for datasets with $> 100,000$ samples.
+
+## Code Snippet: SVC with RBF Kernel
+
+```python
+from sklearn.svm import SVC
+from sklearn.model_selection import GridSearchCV
+
+# 1. Tuning C and Gamma
+param_grid = {
+    'C': [0.1, 1, 10, 100],
+    'gamma': [1, 0.1, 0.01, 0.001],
+    'kernel': ['rbf']
+}
+
+grid = GridSearchCV(SVC(), param_grid, refit=True, verbose=2)
+grid.fit(X_train, y_train)
+
+# 2. Linear SVC for large-scale data
+from sklearn.svm import LinearSVC
+l_svc = LinearSVC(C=1.0, max_iter=10000)
+l_svc.fit(X_train, y_train)
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Text Feature Extraction
+
+The `feature_extraction.text` module allows you to convert text documents into numeric feature vectors.
+
+## What can be done?
+- **Tokenization**: Breaking strings into words or n-grams.
+- **Weighting**: Calculate how important a word is to a document (TF-IDF).
+- **Dimensionality Reduction**: Map large vocabularies to a fixed-size space (Hashing).
+
+## Key Tools
+1. **`CountVectorizer`**:
+   - Creates a "Bag of Words" representation.
+   - Counts the occurrences of each word in each document.
+2. **`TfidfVectorizer`**:
+   - (Term Frequency-Inverse Document Frequency).
+   - Down-weights common words (like "the", "a") and up-weights rare, informative words.
+3. **`HashingVectorizer`**:
+   - Stateless and fast.
+   - Maps tokens to indices using a hash function.
+   - **Advantage**: Low memory footprint and supports out-of-core learning.
+
+## Key Parameters
+- `stop_words`: List of words to ignore (e.g., `'english'`).
+- `ngram_range`: Range of n-grams to extract (e.g., `(1, 2)` for unigrams and bigrams).
+- `max_df` / `min_df`: Filter out words that appear too frequently or too rarely.
+
+## Code Snippet: TF-IDF Pipeline
+
+```python
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.pipeline import Pipeline
+
+# 1. Pipeline for Text Classification
+text_clf = Pipeline([
+    ('tfidf', TfidfVectorizer(stop_words='english', ngram_range=(1, 2))),
+    ('clf', MultinomialNB()),
+])
+
+text_clf.fit(docs_train, y_train)
+
+# 2. Inspecting vocabulary
+tfidf = text_clf.named_steps['tfidf']
+vocab = tfidf.vocabulary_ # Dict mapping words to indices
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
+# Scikit-learn Cheatsheet: Decision Trees
+
+Decision Trees are non-parametric supervised learning methods used for classification and regression.
+
+## What can be done?
+- **Automatic Interaction Discovery**: Naturally capture non-linear relationships between features.
+- **Interpretability**: Easily visualize exactly how a decision is made.
+- **Handling Mixed Data**: Can handle both numerical and categorical data (though scikit-learn's current implementation requires encoding).
+
+## Key Algorithms
+1. **`DecisionTreeClassifier` / `DecisionTreeRegressor`**:
+   - Predictive models that split data into branches by optimizing info gain (Gini/Entropy).
+2. **`ExtraTrees`**:
+   - Randomly picks splits to further reduce variance (often used in ensembles).
+
+## Important Concepts
+- **Overfitting**: Trees can grow very deep and learn the noise in data.
+- **Pruning (`ccp_alpha`)**: Cost Complexity Pruning is used to remove branches that provide little predictive power.
+- **Feature Importance**: Trees provide a ranking of features based on how much they reduce the impurity.
+
+## Visualization
+- **`plot_tree`**: Render the tree structure as a diagram.
+- **`export_text`**: Get a text-based summary of rules.
+
+## Code Snippet: Tree Building & Visualization
+
+```python
+from sklearn.tree import DecisionTreeClassifier, plot_tree, export_text
+import matplotlib.pyplot as plt
+
+# 1. Fit Tree
+clf = DecisionTreeClassifier(max_depth=3, min_samples_leaf=5)
+clf.fit(X, y)
+
+# 2. Visualize
+plt.figure(figsize=(12, 8))
+plot_tree(clf, feature_names=feature_names, class_names=class_names, filled=True)
+plt.show()
+
+# 3. Export Rules
+tree_rules = export_text(clf, feature_names=list(feature_names))
+print(tree_rules)
+```
+
+---
+**Credits**: This cheatsheet is based on the [scikit-learn](https://scikit-learn.org/) documentation and examples, which are licensed under the [BSD 3-Clause License](https://github.com/scikit-learn/scikit-learn/blob/main/COPYING).
+Copyright (c) 2007 - 2026 The scikit-learn developers. All rights reserved.
+
+
+---
+
+
 # Technical Writing Cheatsheet
 
 Code is read by machines; documentation is read by humans. Both require clarity, structure, and optimization.
